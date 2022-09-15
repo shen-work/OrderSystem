@@ -56,22 +56,20 @@ new QRCode( 物件 , {
             QrCode:(e)=>{
 
 
-                document.body.prepend(
-                    Ex.func.PopWindow(`<div id="Qrcode"></div>`,'QrCode')
-                );
+                Ex.func.PopWindow(`<input data-selector="#Qrcode" data-event="Close" type="button" value="關閉">`,'Qrcode')
+               
 
 
-                var size = (window.innerWidth>window.innerHeight)?window.innerWidth:window.innerHeight;
+                var size = ((window.innerWidth<window.innerHeight)?window.innerWidth:window.innerHeight)-30;
 
-                var qrcode = new QRCode( 'Qrcode' , {
-                    text: e.target.dataset.txt,
-                    width:size,
-                    height:size,
-                });
+                    new QRCode( 'Qrcode' , {
+                        text: e.target.dataset.txt,
+                        width:size,
+                        height:size,
+                    });
 
-                qrcode._el.querySelector("img").addEventListener("click",()=>{
-                    qrcode._el.remove();
-                });
+                
+
 
             },
             Menu:(e)=>{
@@ -234,9 +232,11 @@ new QRCode( 物件 , {
                         }
                         else
                         {
-                            document.body.prepend(
-                                Ex.func.PopWindow(Ex.temp.CountFood(e.target.id),'CountFood',e)
-                            );
+                            Ex.func.PopWindow(
+                                Ex.temp.CountFood(e.target.id),
+                                'CountFood',
+                                e);
+                          
                         }
 
 
@@ -263,9 +263,10 @@ new QRCode( 物件 , {
 
             },
             Close:(e)=>{
-                console.log(e);
-
-                //e.target.remove();
+                
+                document.querySelectorAll(e.target.dataset.selector).forEach(o=>{
+                    o.remove();
+                });
 
             },
             PopWindow:(html,id,e)=>{
@@ -283,7 +284,7 @@ new QRCode( 物件 , {
                 div.innerHTML = html;
 
 
-                return div;
+                document.body.prepend(div);
             },
             IOSDate:(IOSDate,opt)=>{
 

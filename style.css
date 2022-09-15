@@ -30,12 +30,24 @@ input[type="button"]:active{
     height: auto;
 }
 
+#Qrcode{
+    background: #fff;
+    margin: 8px;
+    padding: 4px;
+}
+
+#Qrcode input{
+    width: 100%;
+    height: 2cm;
+    font-size: 1cm;
+    margin-bottom: 0.5cm;
+}
 
 .pop{
     position: absolute;
 }
 .pop input{
-    height: 1cm;
+    min-height: 1cm;
     min-width: 1cm;
 }
 
