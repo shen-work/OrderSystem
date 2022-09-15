@@ -36,7 +36,7 @@ input[type="button"]:active{
 }
 .pop input{
     height: 1cm;
-    width: 1cm;
+    min-width: 1cm;
 }
 
 table{
@@ -50,7 +50,7 @@ table td{
 }
 table input{
     height: 1cm;
-    width: 1cm;
+    min-width: 1cm;
 }
 
 

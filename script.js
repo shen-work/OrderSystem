@@ -2,6 +2,14 @@
 /*phone
 width:500
 height:900
+
+
+new QRCode( 物件 , {
+    text: 網址,
+    width: 寬,
+    height: 高
+});
+
 */
 //(()=>{
     var Ex = {
@@ -17,7 +25,13 @@ height:900
                 "味噌湯":25
             }
         },
-        flag:{},
+        flag:{
+            url:{
+                get:(row)=>{
+                    return new URL(location.href).searchParams.get(row);
+                }
+            }
+        },
         func:{
             StorageUpd:()=>{
 
@@ -39,7 +53,94 @@ height:900
                     Ex.func[e.target.dataset.event](e);
                 }
             },
-            Order:(e)=>{
+            Menu:(e)=>{
+                
+                var mode = e.target.dataset.mode;
+                var menu = Ex.flag[Ex.cfg.storage].menu||{};
+                var data = {};
+
+                document.querySelectorAll(`[data-input]`).forEach(o=>{
+                    data[ o.id ] = o.value;
+                    o.value = '';
+                });
+
+
+
+
+                switch (mode){
+
+                    case "AddFood":
+
+                        if(data.name==='' || data.price==='') return;
+
+                        menu[ data.name ] = {
+                            name:data.name,
+                            price:data.price
+                        }
+                    break;
+
+                    case "DelFood":
+
+                        delete menu[e.target.id];
+
+                    break;
+
+                    case "SetFood":
+
+                        if(e.target.dataset.edit_id!==undefined)
+                        {
+                            var edit_id = e.target.dataset.edit_id;
+                            
+                            if(data.name!==menu[ edit_id ].name) delete menu[ edit_id ];
+
+                            menu[ data.name ] = {
+                                name:data.name,
+                                price:data.price
+                            }
+
+                            e.target.dataset.mode = "AddFood";
+                            e.target.value = "新增菜單";
+                            e.target.removeAttribute("dataset-edit_id");
+
+                            
+                        }
+                        else
+                        {
+                            document.querySelectorAll(`[data-input]`).forEach(o=>{
+                                o.value = menu[ e.target.id ][ o.id ];
+                            });
+    
+                            document.querySelector(`[data-mode="AddFood"]`).value = "修改菜單";
+    
+                            document.querySelector(`[data-mode="AddFood"]`).dataset.edit_id = e.target.id;
+    
+                            document.querySelector(`[data-mode="AddFood"]`).dataset.mode = "SetFood";
+
+                            setTimeout(()=>{
+
+                                document.querySelectorAll(`table [data-event="Menu"]`).forEach(o=>{
+                                    o.setAttribute("disabled","disabled");
+                                });
+                            },0);
+
+                        }
+
+                    break;
+
+                    
+
+
+                }
+
+
+                Ex.flag[Ex.cfg.storage].menu = menu;
+
+                Ex.func.StorageUpd();
+                document.querySelector("#Order").innerHTML = Ex.temp.Menu();
+
+
+            },
+            Buy:(e)=>{
 
                 var mode = e.target.dataset.mode;
                 var order = Ex.flag[Ex.cfg.storage].order||{};
@@ -83,7 +184,7 @@ height:900
                         else
                         {
                             document.body.prepend(
-                                Ex.func.PopWindow(Ex.temp.CountFodd(e.target.id),'CountFood',e)
+                                Ex.func.PopWindow(Ex.temp.CountFood(e.target.id),'CountFood',e)
                             );
                         }
 
@@ -152,23 +253,45 @@ height:900
 
         },
         temp:{
-            body:()=>{
-                return `
-                    <div id="Main">
-                        <input 
-                        data-event="Order" 
-                        data-mode="AddFood" type="button" value="點餐">
-                        <select id="food">
-                            ${Ex.temp.SelectHtml(Ex.cfg._menu)}
-                        </select>
-                        <div id="Order">
-                            ${Ex.temp.Order()}
-                        </div>
-                        <input 
-                        data-event="Order" 
-                        data-mode="End" type="button" value="結帳">
-                        <div id="OrderList">
-                        </div>
+            ShopPage:()=>{
+                return `<div id="Main">
+
+                    <input 
+                    data-event="Menu" 
+                    data-mode="AddFood" type="button" value="新增菜單">
+
+                    <input data-input placeholder="名稱" id="name" type="text" value="">
+                    <input data-input placeholder="價錢" id="price" type="number" value="">
+                
+                
+                    <div id="Order">
+                        ${Ex.temp.Menu()}
+                    </div>
+
+                    <input 
+                    data-event="Menu" 
+                    data-mode="End" type="button" value="儲存">
+                
+                
+                </div>`;
+            },
+            BuyPage:()=>{
+                return `<div id="Main">
+
+                    <input 
+                    data-event="Buy" 
+                    data-mode="AddFood" type="button" value="點餐">
+                    <select id="food">
+                        ${Ex.temp.SelectHtml(Ex.cfg._menu)}
+                    </select>
+                    <div id="Order">
+                        ${Ex.temp.Order()}
+                    </div>
+                    <input 
+                    data-event="Buy" 
+                    data-mode="End" type="button" value="結帳">
+                    <div id="OrderList">
+                    </div>
 
                     </div>
                 `;
@@ -182,6 +305,46 @@ height:900
                 }
 
                 return html;
+            },
+            Menu:(list = Ex.flag[Ex.cfg.storage].menu)=>{
+
+                if(list===undefined) return ``;
+                if(Object.keys(list).length===0) return ``;
+
+                var html = `<table><tr>
+                    <td>名稱</td>
+                    <td>單價</td>
+                    <td></td>
+                </tr>`;
+
+                for(var name in list)
+                {
+                    var food = list[name];
+
+                    html += `<tr>
+                        <td>
+                        ${name}
+                        </td>
+                        <td>
+                        ${food.price}
+                        </td>
+                        <td>
+                        <input id="${name}" 
+                        data-event="Menu" 
+                        data-mode="DelFood" type="button" value="刪除">
+                        <input id="${name}" 
+                        data-event="Menu" 
+                        data-mode="SetFood" type="button" value="修改">
+                        </td>
+                    </tr>`;
+
+                }
+
+
+                html += `</table>`;
+
+                return html;
+
             },
             Order:(list = Ex.flag[Ex.cfg.storage].order)=>{
 
@@ -207,13 +370,13 @@ height:900
                         <td>${food.price}</td>
                         <td>
                         <input id="${name}" 
-                        data-event="Order" 
+                        data-event="Buy" 
                         data-mode="CountFood" type="button" value="${food.count}">
                         </td>
                         <td>${food.count*food.price}</td>
                         <td>
                         <input id="${name}" 
-                        data-event="Order" 
+                        data-event="Buy" 
                         data-mode="DelFood" type="button" value="刪除">
                         </td>
                     </tr>`;
@@ -277,19 +440,20 @@ height:900
                 return html;
 
             },
-            CountFodd:(food)=>{
+            CountFood:(food)=>{
                 var html = ``;
 
                     html = `
                     <div id="${food}" style="display: grid;">
-                    <input type="button" data-event="Order" 
+                    <input type="button" data-event="Buy" 
                     data-mode="CountFood" value="+">
-                    <input type="button" data-event="Order" 
+                    <input type="button" data-event="Buy" 
                     data-mode="CountFood" value="-">
                     </div>`;
 
                 return html;
-            }
+            },
+            
 
 
         },
@@ -304,20 +468,30 @@ height:900
             Ex.DB = Ex.DB.database();
 
 
-            document.body.innerHTML = Ex.temp.body();
+            if(Ex.flag.url.get("shop")===null)
+            {
+                document.body.innerHTML = Ex.temp.ShopPage();
+            }
+            else
+            {
+                document.body.innerHTML = Ex.temp.BuyPage();
+
+                Ex.DB.ref("order").on("value",r=>{
+
+                    Ex.flag.OrderList = r.val();
+    
+    
+                    document.querySelector("#OrderList").innerHTML = Ex.temp.OrderList();
+    
+                });
+            }
+
+            
 
             document.addEventListener("click",Ex.func.ClickEvent);
 
 
-            Ex.DB.ref("order").on("value",r=>{
-
-                Ex.flag.OrderList = r.val();
-
-
-                document.querySelector("#OrderList").innerHTML = Ex.temp.OrderList();
-                console.log('test');
-
-            });
+            
 
             
 
