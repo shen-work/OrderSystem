@@ -66,11 +66,6 @@ height:900
                             count:Ex.flag.session.order[food].count+=1
                         }
 
-
-                        Ex.func.StorageUpd();
-
-
-                        
                         
                     break;
 
@@ -78,17 +73,22 @@ height:900
 
                         delete Ex.flag.session.order[e.target.id];
 
-                        Ex.func.StorageUpd();
+                    break;
+
+                    case "CountFodd":
+                        
+                        Ex.flag.session.order[e.target.id].count = parseInt(prompt("輸入數量",'1'))||1
 
 
                     break;
-
 
                     case "End":
 
                     break;
                 }
 
+
+                Ex.func.StorageUpd();
                 document.querySelector("#Order").innerHTML = Ex.temp.OrderList();
 
             }
@@ -136,7 +136,11 @@ height:900
                     html += `<tr>
                         <td>${name}</td>
                         <td>${food.price}</td>
-                        <td>${food.count}</td>
+                        <td>
+                        <input id="${name}" 
+                        data-event="Order" 
+                        data-mode="CountFodd" type="button" value="${food.count}">
+                        </td>
                         <td>${food.count*food.price}</td>
                         <td>
                         <input id="${name}" 
