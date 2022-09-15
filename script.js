@@ -53,6 +53,27 @@ new QRCode( 物件 , {
                     Ex.func[e.target.dataset.event](e);
                 }
             },
+            QrCode:(e)=>{
+
+
+                document.body.prepend(
+                    Ex.func.PopWindow(`<div id="Qrcode"></div>`,'QrCode')
+                );
+
+
+                var size = (window.innerWidth>window.innerHeight)?window.innerWidth:window.innerHeight;
+
+                var qrcode = new QRCode( 'Qrcode' , {
+                    text: e.target.dataset.txt,
+                    width:size,
+                    height:size,
+                });
+
+                qrcode._el.querySelector("img").addEventListener("click",()=>{
+                    qrcode._el.remove();
+                });
+
+            },
             Menu:(e)=>{
                 
                 var mode = e.target.dataset.mode;
@@ -60,7 +81,8 @@ new QRCode( 物件 , {
                 var data = {};
 
                 document.querySelectorAll(`[data-input]`).forEach(o=>{
-                    data[ o.id ] = o.value;
+
+                    data[ o.id ] = ( isNaN(parseInt(o.value)) )?o.value:parseInt(o.value);
                     o.value = '';
                 });
 
@@ -127,7 +149,36 @@ new QRCode( 物件 , {
 
                     break;
 
-                    
+
+                    case "End":
+
+                        if(Object.keys(menu).length===0) return;
+
+                        if(Ex.flag[Ex.cfg.storage].ShopId!==undefined)
+                        {
+
+                            Ex.DB.ref(`menu/${Ex.flag[Ex.cfg.storage].ShopId}/list`).set(menu);
+    
+                            Ex.func.StorageUpd();
+    
+
+                        }
+                        else
+                        {
+                            Ex.DB.ref("menu").push({
+                                list:menu,
+                                time:Ex.cfg.db_time
+                            }).then(r=>{
+    
+                                Ex.flag[Ex.cfg.storage].ShopId = r.key;
+                                Ex.func.StorageUpd();
+    
+                            });
+                            
+                        }
+
+
+                    break;
 
 
                 }
@@ -211,6 +262,12 @@ new QRCode( 物件 , {
                 document.querySelector("#Order").innerHTML = Ex.temp.Order();
 
             },
+            Close:(e)=>{
+                console.log(e);
+
+                //e.target.remove();
+
+            },
             PopWindow:(html,id,e)=>{
 
                 var div = document.createElement("div");
@@ -271,6 +328,7 @@ new QRCode( 物件 , {
                     <input 
                     data-event="Menu" 
                     data-mode="End" type="button" value="儲存">
+                    <input type="button" data-txt="${location.pathname}?ShopId=${Ex.flag[Ex.cfg.storage].ShopId}" data-event="QrCode" value="顯示QRCODE">
                 
                 
                 </div>`;
@@ -471,12 +529,25 @@ new QRCode( 物件 , {
             if(Ex.flag.url.get("shop")===null)
             {
                 document.body.innerHTML = Ex.temp.ShopPage();
+
+                Ex.DB.ref(`menu/${Ex.flag.local.ShopId}`).on("value",r=>{
+
+                    if(r.val()===null) return;
+
+                    Ex.flag[Ex.cfg.storage].menu = r.val().list;
+    
+    
+                    document.querySelector("#Order").innerHTML = Ex.temp.Menu();
+    
+                });
             }
             else
             {
                 document.body.innerHTML = Ex.temp.BuyPage();
 
                 Ex.DB.ref("order").on("value",r=>{
+
+                    if(r.val()===null) return;
 
                     Ex.flag.OrderList = r.val();
     
