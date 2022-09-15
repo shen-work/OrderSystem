@@ -1,15 +1,38 @@
 //https://ordersystem-c18b3-default-rtdb.firebaseio.com/
-(()=>{
+/*phone
+width:500
+height:900
+*/
+//(()=>{
     var Ex = {
         id:"OrderSystem",
-        cfg:{},
+        cfg:{
+            db_url:"https://ordersystem-c18b3-default-rtdb.firebaseio.com/"
+        },
         func:{},
         flag:{},
-        temp:{},
+        temp:{
+            body:()=>{
+                return `
+                    <div id="Main">
+                        <input type="button" value="點餐">
+                    </div>
+                `;
+            }
+
+
+        },
         init:()=>{
 
 
-            document.querySelector(`textarea`).value = `window.innerHeight:${window.innerHeight}\nwindow.innerWidth:${window.innerWidth}`;
+            
+            Ex.DB = firebase;
+            Ex.DB.initializeApp({databaseURL:Ex.cfg.db_url});
+            Ex.DB = Ex.DB.database();
+
+
+            document.body.innerHTML = Ex.temp.body();
+
 
 
         }
@@ -25,4 +48,4 @@
     }
     
 
-})();
+//})();

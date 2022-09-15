@@ -4,9 +4,29 @@ body{
     margin: 0px;
     padding: 0px;
     text-align: center;
+    
 }
 
-textarea{
-    width: 500px;
-    height: 200px;
+#Main{
+    margin: 8px;
+    padding: 4px;
+    
+}
+
+#Main input{
+    width: 100%;
+    height: 2cm;
+    font-size: 1cm;
+}
+
+
+
+
+input[type="button"]{
+    
+}
+
+input[type="button"]:active{
+    background: #555;
+    color: #fff;
 }
