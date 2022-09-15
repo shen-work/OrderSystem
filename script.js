@@ -7,15 +7,38 @@ height:900
     var Ex = {
         id:"OrderSystem",
         cfg:{
-            db_url:"https://ordersystem-c18b3-default-rtdb.firebaseio.com/"
+            db_url:"https://ordersystem-c18b3-default-rtdb.firebaseio.com/",
+            _menu:{
+                "牛肉蓋飯":100,
+                "豬肉蓋飯":85,
+                "親子蓋飯":85,
+                "味噌湯":25
+            }
         },
-        func:{},
+        func:{
+            SelectHtml:(obj,val)=>{
+                var html = ``;
+
+                for(var v in obj)
+                {
+                    html += `<option value="${v}">${v},${obj[v]}</option>`
+                }
+
+                return html;
+            }
+
+        },
         flag:{},
         temp:{
             body:()=>{
                 return `
                     <div id="Main">
                         <input type="button" value="點餐">
+                        <select>
+                        ${Ex.func.SelectHtml(Ex.cfg._menu)}
+                        </select>
+                        
+                        <input type="button" value="結帳">
                     </div>
                 `;
             }
