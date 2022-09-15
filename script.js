@@ -30,16 +30,6 @@ height:900
                     sessionStorage[Ex.id] = JSON.stringify(Ex.flag.session);
                 }
             },
-            SelectHtml:(obj)=>{
-                var html = ``;
-
-                for(var v in obj)
-                {
-                    html += `<option value="${v}">${v},${obj[v]}</option>`
-                }
-
-                return html;
-            },
             ClickEvent:(e)=>{
                 
                 if(Ex.func[e.target.dataset.event]!==undefined)
@@ -75,9 +65,31 @@ height:900
 
                     break;
 
-                    case "CountFodd":
+                    case "CountFood":
 
-                        Ex.flag.session.order[e.target.id].count = parseInt(prompt("輸入數量",'1'))||1
+
+                        document.querySelectorAll("#CountFood").forEach(o=>o.remove());
+                        
+                        if(e.target.value==="-" || e.target.value==="+")
+                        {
+                            var food = e.target.parentElement.id;
+
+                            (e.target.value==="-")?Ex.flag.session.order[food].count-=1:Ex.flag.session.order[food].count+=1;
+
+                            if(Ex.flag.session.order[food].count<=0)
+                            delete Ex.flag.session.order[food];
+
+                        }
+                        else
+                        {
+                            
+
+                            document.body.prepend(
+                                Ex.func.PopWindow(Ex.temp.CountFodd(e.target.id),'CountFood',e)
+                            );
+                        }
+
+                        
 
 
                     break;
@@ -91,6 +103,23 @@ height:900
                 Ex.func.StorageUpd();
                 document.querySelector("#Order").innerHTML = Ex.temp.OrderList();
 
+            },
+            PopWindow:(html,id,e)=>{
+
+                var div = document.createElement("div");
+                div.className = "pop";
+                div.id = id;
+                
+                if(e!==undefined)
+                {
+                    div.style.left = e.x + 'px';
+                    div.style.top = e.y + 'px';
+                }
+
+                div.innerHTML = html;
+
+
+                return div;
             }
 
         },
@@ -102,7 +131,7 @@ height:900
                         data-event="Order" 
                         data-mode="AddFood" type="button" value="點餐">
                         <select id="food">
-                            ${Ex.func.SelectHtml(Ex.cfg._menu)}
+                            ${Ex.temp.SelectHtml(Ex.cfg._menu)}
                         </select>
                         <div id="Order">
                             ${Ex.temp.OrderList()}
@@ -113,6 +142,16 @@ height:900
 
                     </div>
                 `;
+            },
+            SelectHtml:(list)=>{
+                var html = ``;
+
+                for(var v in list)
+                {
+                    html += `<option value="${v}">${v},${list[v]}</option>`
+                }
+
+                return html;
             },
             OrderList:(list = Ex.flag.session.order)=>{
 
@@ -139,7 +178,7 @@ height:900
                         <td>
                         <input id="${name}" 
                         data-event="Order" 
-                        data-mode="CountFodd" type="button" value="${food.count}">
+                        data-mode="CountFood" type="button" value="${food.count}">
                         </td>
                         <td>${food.count*food.price}</td>
                         <td>
@@ -164,6 +203,19 @@ height:900
 
                 return html;
 
+            },
+            CountFodd:(food)=>{
+                var html = ``;
+
+                    html = `
+                    <div id="${food}" style="display: grid;">
+                    <input type="button" data-event="Order" 
+                    data-mode="CountFood" value="+">
+                    <input type="button" data-event="Order" 
+                    data-mode="CountFood" value="-">
+                    </div>`;
+
+                return html;
             }
 
 

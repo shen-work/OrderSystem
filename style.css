@@ -25,6 +25,11 @@ body{
     height: auto;
 }
 
+
+.pop{
+    position: absolute;
+}
+
 table{
     width: 100%;
 
