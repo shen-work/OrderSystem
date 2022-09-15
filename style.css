@@ -15,26 +15,28 @@ body{
 
 #Main>*{
     margin:0.1cm 0 0.1cm 0;
-}
 
-#Main input{
     width: 100%;
     height: 2cm;
     font-size: 1cm;
 }
 
-#Main select{
-    width: 100%;
-    height: 2cm;
-    font-size: 1cm;
+#Order{
+    height: auto;
 }
 
+table{
+    width: 100%;
 
-input[type="button"]{
+}
+table td{
+    font-size: 0.5cm;
     
 }
+
 
 input[type="button"]:active{
     background: #555;
     color: #fff;
 }
+

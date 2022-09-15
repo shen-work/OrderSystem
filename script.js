@@ -70,8 +70,17 @@ height:900
                         Ex.func.StorageUpd();
 
 
-                        document.querySelector("#Order").innerHTML = Ex.temp.OrderList(Ex.flag.session.order);
                         
+                        
+                    break;
+
+                    case "DelFood":
+
+                        delete Ex.flag.session.order[e.target.id];
+
+                        Ex.func.StorageUpd();
+
+
                     break;
 
 
@@ -79,6 +88,8 @@ height:900
 
                     break;
                 }
+
+                document.querySelector("#Order").innerHTML = Ex.temp.OrderList();
 
             }
 
@@ -94,7 +105,7 @@ height:900
                             ${Ex.func.SelectHtml(Ex.cfg._menu)}
                         </select>
                         <div id="Order">
-                            ${Ex.temp.OrderList(Ex.flag.session.order)}
+                            ${Ex.temp.OrderList()}
                         </div>
                         <input 
                         data-event="Order" 
@@ -103,20 +114,49 @@ height:900
                     </div>
                 `;
             },
-            OrderList:(list)=>{
+            OrderList:(list = Ex.flag.session.order)=>{
 
-                var html = ``,total_price = 0;
+                if(list===undefined) return ``;
+                if(Object.keys(list).length===0) return ``;
+                
+
+                var total_price = 0;
+                var html = `<table><tr>
+                    <td>餐點</td>
+                    <td>單價</td>
+                    <td>數量</td>
+                    <td>總價</td>
+                    <td></td>
+                </tr>`;
+
                 for(var name in list)
                 {
                     var food = list[name];
 
-                    html += `${name} ${food.count} 個 ${food.count*food.price} <BR>`;
+                    html += `<tr>
+                        <td>${name}</td>
+                        <td>${food.price}</td>
+                        <td>${food.count}</td>
+                        <td>${food.count*food.price}</td>
+                        <td>
+                        <input id="${name}" 
+                        data-event="Order" 
+                        data-mode="DelFood" type="button" value="刪除">
+                        </td>
+                    </tr>`;
 
                     total_price+=food.count*food.price;
                 }
 
-                html += `總價 ${total_price} <BR>`
+                html += `<tr>
+                    <td>合計</td>
+                    <td>${total_price}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>`;
 
+                html += `</table>`;
 
                 return html;
 
