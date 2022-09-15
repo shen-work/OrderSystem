@@ -76,7 +76,7 @@ height:900
                     break;
 
                     case "CountFodd":
-                        
+
                         Ex.flag.session.order[e.target.id].count = parseInt(prompt("輸入數量",'1'))||1
 
 
@@ -169,6 +169,8 @@ height:900
 
         },
         init:()=>{
+
+            document.querySelector("#script").src = `${document.querySelector("#script").src}?t=${new Date().getTime()}`
 
             Ex.func.StorageUpd();
             
