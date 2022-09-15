@@ -39,6 +39,8 @@ height:900
                         </select>
                         
                         <input type="button" value="結帳">
+
+                        <textarea></textarea>
                     </div>
                 `;
             }
@@ -55,6 +57,11 @@ height:900
 
 
             document.body.innerHTML = Ex.temp.body();
+
+
+            navigator.geolocation.getCurrentPosition(function(p) {
+                document.querySelector("textarea").value = `latitude:${p.coords.latitude}\nlongitude:${p.coords.longitude}`;
+            });
 
 
 
