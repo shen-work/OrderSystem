@@ -293,6 +293,10 @@ new QRCode( 物件 , {
                         Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}/order/${day}`).push({
                             list:buy_order,
                             time:Ex.cfg.db_time
+                        }).then(r=>{
+
+                            Ex.flag[Ex.cfg.storage].BuyId = r.key;
+                            Ex.func.StorageUpd();
                         });
 
                         buy_order = {};
@@ -606,7 +610,9 @@ new QRCode( 物件 , {
 
                     if(Ex.flag[Ex.cfg.storage].ShopId!==undefined)
                     Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}`).on("value",r=>{
-                        if(r.val()===null)
+
+                        r = r.val();
+                        if(r===null)
                         {
                             delete Ex.flag[Ex.cfg.storage].ShopId;
                             Ex.func.StorageUpd();
@@ -614,9 +620,7 @@ new QRCode( 物件 , {
                             return;
                         }
 
-                        var ShopId = Ex.flag[Ex.cfg.storage].ShopId;
-                        Ex.flag[Ex.cfg.storage] = r.val();
-                        Ex.flag[Ex.cfg.storage].ShopId = ShopId;
+                        for(var key in r) Ex.flag[Ex.cfg.storage][key] = r[key];
                         Ex.func.StorageUpd();
         
                         document.querySelector("#Order").innerHTML = Ex.temp.Menu();
@@ -633,17 +637,17 @@ new QRCode( 物件 , {
 
                     Ex.DB.ref(`shop/${Buy.id}`).on("value",r=>{
 
-                        if(r.val()===null){
+                        r = r.val();
+                        if(r===null){
 
                             setTimeout(()=>{location.href = location.pathname;},0);
                             return;
                         }
 
 
-                        var buy_order = Ex.flag[Ex.cfg.storage].buy_order;
-                        Ex.flag[Ex.cfg.storage] = r.val();
-                        Ex.flag[Ex.cfg.storage].ShopId = Buy.id;
-                        Ex.flag[Ex.cfg.storage].buy_order = buy_order;
+
+                        for(var key in r) Ex.flag[Ex.cfg.storage][key] = r[key];
+                        Ex.func.StorageUpd();
         
         
                         document.body.innerHTML = Ex.temp.BuyPage();
