@@ -155,19 +155,19 @@ new QRCode( 物件 , {
                         if(Ex.flag[Ex.cfg.storage].ShopId!==undefined)
                         {
 
-                            Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}/menu`).set(menu);
+                            Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}`).set({
+                                menu:menu,
+                                shop_name:data.shop_name
+                            });
     
-
-    
-    
-
                         }
                         else
                         {
 
 
                             Ex.DB.ref("shop").push({
-                                menu:menu
+                                menu:menu,
+                                shop_name:data.shop_name
                             }).then(r=>{
     
                                 Ex.flag[Ex.cfg.storage].ShopId = r.key;
@@ -342,7 +342,7 @@ new QRCode( 物件 , {
 
                     <input 
                     data-event="Menu" 
-                    data-mode="End" type="button" value="儲存">
+                    data-mode="End" type="button" value="上傳菜單">
                     <input type="button" data-txt="${location.origin}${location.pathname}?ShopId=${Ex.flag[Ex.cfg.storage].ShopId}" data-event="QrCode" value="顯示QRCODE">
                 
                 
@@ -414,7 +414,17 @@ new QRCode( 物件 , {
                 }
 
 
-                html += `</table>`;
+                html += `
+                
+                <tr>
+                    <td colspan="3">
+                    <input data-input id="shop_name" placeholder="店名" type="text" value="${Ex.flag[Ex.cfg.storage].shop_name||``}">
+                    </td>
+                    
+                    
+                </tr>
+                
+                </table>`;
 
                 return html;
 
@@ -566,7 +576,7 @@ new QRCode( 物件 , {
                         return;
                     }
 
-                    Ex.flag[Ex.cfg.storage].menu = r.val().menu;
+                    Ex.flag[Ex.cfg.storage] = r.val();
                     Ex.func.StorageUpd();
     
                     document.querySelector("#Order").innerHTML = Ex.temp.Menu();

@@ -11,6 +11,13 @@ input[type="button"]:active{
     color: #fff;
 }
 
+input[data-input]{
+    margin:0.1cm 0 0.1cm 0;
+    width: 100%;
+    height: 2cm;
+    font-size: 1cm;
+}
+
 
 #Main{
     margin: 8px;
