@@ -343,7 +343,7 @@ new QRCode( 物件 , {
                     <input 
                     data-event="Menu" 
                     data-mode="End" type="button" value="儲存">
-                    <input type="button" data-txt="${location.pathname}?ShopId=${Ex.flag[Ex.cfg.storage].ShopId}" data-event="QrCode" value="顯示QRCODE">
+                    <input type="button" data-txt="${location.origin}${location.pathname}?ShopId=${Ex.flag[Ex.cfg.storage].ShopId}" data-event="QrCode" value="顯示QRCODE">
                 
                 
                 </div>`;
@@ -532,19 +532,23 @@ new QRCode( 物件 , {
         },
         init:()=>{
 
-
             Ex.func.StorageUpd();
-            
-            Ex.DB = firebase;
-            Ex.DB.initializeApp({databaseURL:Ex.cfg.db_url});
-            Ex.DB = Ex.DB.database();
+
 
             if(Ex.flag.url.get("ShopId")!==null)
             {
                 Ex.flag.local.ShopId = Ex.flag.url.get("ShopId");
-
                 Ex.func.StorageUpd();
+                location.href = location.pathname;
+                return;
             }
+            
+
+            Ex.DB = firebase;
+            Ex.DB.initializeApp({databaseURL:Ex.cfg.db_url});
+            Ex.DB = Ex.DB.database();
+
+
 
 
             if(Ex.flag.url.get("buy")===null)
