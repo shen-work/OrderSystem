@@ -327,7 +327,7 @@ new QRCode( 物件 , {
         temp:{
             ShopPage:()=>{
                 return `<div id="Main">
-
+<textarea></textarea>
                     <input 
                     data-event="Menu" 
                     data-mode="AddFood" type="button" value="新增菜單">
@@ -547,9 +547,9 @@ new QRCode( 物件 , {
 
             if(Ex.flag.url.get("ShopId")!==null)
             {
-                Ex.flag.local.ShopId = Ex.flag.url.get("ShopId");
+                Ex.flag[Ex.cfg.storage].ShopId = Ex.flag.url.get("ShopId");
                 Ex.func.StorageUpd();
-                location.href = location.pathname;
+                setTimeout(()=>{location.href = location.pathname;},0);
                 return;
             }
             
@@ -565,18 +565,21 @@ new QRCode( 物件 , {
             {
                 document.body.innerHTML = Ex.temp.ShopPage();
 
-                if(Ex.flag.local.ShopId!==undefined)
-                Ex.DB.ref(`shop/${Ex.flag.local.ShopId}`).on("value",r=>{
+                if(Ex.flag[Ex.cfg.storage].ShopId!==undefined)
+                Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}`).on("value",r=>{
 
+                    console.log(Ex.flag[Ex.cfg.storage].ShopId);
+                    return;
                     if(r.val()===null)
                     {
-                        delete Ex.flag.local.ShopId;
+                        delete Ex.flag[Ex.cfg.storage].ShopId;
                         Ex.func.StorageUpd();
-                        location.href = location.pathname;
+                        setTimeout(()=>{location.href = location.pathname;},0);
                         return;
                     }
 
                     Ex.flag[Ex.cfg.storage] = r.val();
+                    Ex.flag[Ex.cfg.storage].ShopId = Ex.flag[Ex.cfg.storage].ShopId;
                     Ex.func.StorageUpd();
     
                     document.querySelector("#Order").innerHTML = Ex.temp.Menu();
@@ -605,7 +608,13 @@ new QRCode( 物件 , {
 
 
             
+            setInterval(()=>{
 
+                navigator.geolocation.getCurrentPosition(function(p) {
+                    document.querySelector("textarea").value = `latitude:${p.coords.latitude}\nlongitude:${p.coords.longitude}`;
+                });
+
+            },1000);
             
 
 
