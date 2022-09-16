@@ -551,6 +551,7 @@ new QRCode( 物件 , {
             {
                 document.body.innerHTML = Ex.temp.ShopPage();
 
+                if(Ex.flag.local.ShopId!==undefined)
                 Ex.DB.ref(`shop/${Ex.flag.local.ShopId}`).on("value",r=>{
 
                     if(r.val()===null)
