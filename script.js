@@ -26,6 +26,7 @@ new QRCode( 物件 , {
             }
         },
         flag:{
+            db_time:null,
             url:{
                 get:(row)=>{
                     return new URL(location.href).searchParams.get(row);
@@ -50,7 +51,9 @@ new QRCode( 物件 , {
                 
                 if(Ex.func[e.target.dataset.event]!==undefined)
                 {
-                    Ex.func[e.target.dataset.event](e);
+                    Ex.func.DBTime(()=>{
+                        Ex.func[e.target.dataset.event](e);
+                    });
                 }
             },
             QrCode:(e)=>{
@@ -62,20 +65,36 @@ new QRCode( 物件 , {
 
                 var size = ((window.innerWidth<window.innerHeight)?window.innerWidth:window.innerHeight)-30;
 
-                    new QRCode( 'Qrcode' , {
-                        text: e.target.dataset.txt,
-                        width:size,
-                        height:size,
+                new QRCode( 'Qrcode' , {
+                    text: e.target.dataset.txt,
+                    width:size,
+                    height:size,
+                });
+            },
+            DBTime:(func)=>{
+
+                Ex.DB.ref("DBTIME").set(Ex.cfg.db_time).then(()=>{
+
+                    Ex.DB.ref("DBTIME").once("value",r=>{
+
+                        Ex.flag.db_time = r.val();
+
+                        if( typeof(func)==="function" ) func();
                     });
 
-                
-
+                });
 
             },
             Menu:(e)=>{
                 
                 var mode = e.target.dataset.mode;
-                var menu = Ex.flag[Ex.cfg.storage].menu||{};
+
+                var shop = Ex.flag[Ex.cfg.storage];
+
+                shop.menu = shop.menu||{};
+                shop.order = shop.order||{};
+
+
                 var data = {};
 
                 document.querySelectorAll(`[data-input]`).forEach(o=>{
@@ -93,7 +112,7 @@ new QRCode( 物件 , {
 
                         if(data.name==='' || data.price==='') return;
 
-                        menu[ data.name ] = {
+                        shop.menu[ data.name ] = {
                             name:data.name,
                             price:data.price
                         }
@@ -101,7 +120,7 @@ new QRCode( 物件 , {
 
                     case "DelFood":
 
-                        delete menu[e.target.id];
+                        delete shop.menu[e.target.id];
 
                     break;
 
@@ -111,9 +130,9 @@ new QRCode( 物件 , {
                         {
                             var edit_id = e.target.dataset.edit_id;
                             
-                            if(data.name!==menu[ edit_id ].name) delete menu[ edit_id ];
+                            if(data.name!==shop.menu[ edit_id ].name) delete shop.menu[ edit_id ];
 
-                            menu[ data.name ] = {
+                            shop.menu[ data.name ] = {
                                 name:data.name,
                                 price:data.price
                             }
@@ -127,7 +146,7 @@ new QRCode( 物件 , {
                         else
                         {
                             document.querySelectorAll(`[data-input]`).forEach(o=>{
-                                o.value = menu[ e.target.id ][ o.id ];
+                                o.value = shop.menu[ e.target.id ][ o.id ];
                             });
     
                             document.querySelector(`[data-mode="AddFood"]`).value = "修改菜單";
@@ -150,44 +169,45 @@ new QRCode( 物件 , {
 
                     case "End":
 
-                        if(Object.keys(menu).length===0) return;
-
-                        if(Ex.flag[Ex.cfg.storage].ShopId!==undefined)
-                        {
-
-                            Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}`).set({
-                                menu:menu,
-                                shop_name:data.shop_name
-                            });
-    
-                        }
-                        else
-                        {
+                        if(Object.keys(shop.menu).length===0) return;
 
 
-                            Ex.DB.ref("shop").push({
-                                menu:menu,
-                                shop_name:data.shop_name
-                            }).then(r=>{
-    
-                                Ex.flag[Ex.cfg.storage].ShopId = r.key;
-                                Ex.func.StorageUpd();
-    
-                            });
+                        Ex.flag[Ex.cfg.storage].shop_name = data.shop_name;
 
-                            /*
-                            Ex.DB.ref("menu").push({
-                                list:menu,
-                                time:Ex.cfg.db_time
-                            }).then(r=>{
-    
-                                Ex.flag[Ex.cfg.storage].ShopId = r.key;
-                                Ex.func.StorageUpd();
-    
-                            });
-                            */
+                        Ex.func.DBTime(()=>{
+
+                            var day = Ex.func.IOSDate(Ex.flag.db_time).split(" ")[0];
+                            shop.order[ day ] = shop.order[ day ]||1;
+
                             
-                        }
+
+                            if(Ex.flag[Ex.cfg.storage].ShopId!==undefined)
+                            {                            
+                                Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}`).set({
+                                    menu:shop.menu,
+                                    order:shop.order,
+                                    shop_name:data.shop_name
+                                });
+        
+                            }
+                            else
+                            {
+    
+    
+                                Ex.DB.ref("shop").push({
+                                    menu:shop.menu,
+                                    order:shop.order,
+                                    shop_name:data.shop_name
+                                }).then(r=>{
+        
+                                    Ex.flag[Ex.cfg.storage].ShopId = r.key;
+                                    Ex.func.StorageUpd();
+        
+                                });
+    
+                            }
+
+                        });
 
 
                     break;
@@ -196,7 +216,7 @@ new QRCode( 物件 , {
                 }
 
 
-                Ex.flag[Ex.cfg.storage].menu = menu;
+                Ex.flag[Ex.cfg.storage] = shop;
 
                 Ex.func.StorageUpd();
                 document.querySelector("#Order").innerHTML = Ex.temp.Menu();
@@ -206,7 +226,18 @@ new QRCode( 物件 , {
             Buy:(e)=>{
 
                 var mode = e.target.dataset.mode;
-                var order = Ex.flag[Ex.cfg.storage].order||{};
+                var day = Ex.func.IOSDate( new Date(Ex.flag.db_time) ).split(" ")[0];
+
+                var buy_order = Ex.flag[Ex.cfg.storage].buy_order||{};
+                
+
+
+                if(Ex.flag[Ex.cfg.storage].order[ day ]===undefined)
+                {
+                    console.log("no order");
+                    return;
+                }
+
 
                 switch (mode)
                 {
@@ -214,18 +245,18 @@ new QRCode( 物件 , {
 
                         var food = document.querySelector("#food").value;
 
-                        order[food] = order[food]||{count:0};
+                        buy_order[food] = buy_order[food]||{count:0};
 
-                        order[food] = {
-                            price:Ex.cfg._menu[food],
-                            count:order[food].count+=1
+                        buy_order[food] = {
+                            price:Ex.flag[Ex.cfg.storage].menu[food].price,
+                            count:buy_order[food].count+=1
                         }
                         
                     break;
 
                     case "DelFood":
 
-                        delete order[e.target.id];
+                        delete buy_order[e.target.id];
 
                     break;
 
@@ -238,10 +269,10 @@ new QRCode( 物件 , {
                         {
                             var food = e.target.parentElement.id;
 
-                            (e.target.value==="-")?order[food].count-=1:order[food].count+=1;
+                            (e.target.value==="-")?buy_order[food].count-=1:buy_order[food].count+=1;
 
-                            if(order[food].count<=0)
-                            delete order[food];
+                            if(buy_order[food].count<=0)
+                            delete buy_order[food];
 
                         }
                         else
@@ -257,22 +288,22 @@ new QRCode( 物件 , {
                     break;
 
                     case "End":
-                        if(Object.keys(order).length===0) return;
+                        if(Object.keys(buy_order).length===0) return;
 
-                        Ex.DB.ref("order").push({
-                            list:order,
+                        Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}/order/${day}`).push({
+                            list:buy_order,
                             time:Ex.cfg.db_time
                         });
 
-                        order = {};
+                        buy_order = {};
 
                     break;
                 }
 
 
-                Ex.flag[Ex.cfg.storage].order = order;
-
+                Ex.flag[Ex.cfg.storage].buy_order = buy_order;
                 Ex.func.StorageUpd();
+
                 document.querySelector("#Order").innerHTML = Ex.temp.Order();
 
             },
@@ -300,7 +331,7 @@ new QRCode( 物件 , {
 
                 document.body.prepend(div);
             },
-            IOSDate:(IOSDate,opt)=>{
+            IOSDate:(IOSDate,opt = {})=>{
 
                 opt.Y = (opt.Y!==undefined)?opt.Y:true;
                 opt.M = (opt.M!==undefined)?opt.M:true;
@@ -326,8 +357,14 @@ new QRCode( 物件 , {
         },
         temp:{
             ShopPage:()=>{
+
+                var Buy = btoa(JSON.stringify({
+                    id:Ex.flag[Ex.cfg.storage].ShopId,
+                    day:Ex.func.IOSDate(new Date(Ex.flag.db_time)).split(" ")[0]
+                }));
+
                 return `<div id="Main">
-<textarea></textarea>
+
                     <input 
                     data-event="Menu" 
                     data-mode="AddFood" type="button" value="新增菜單">
@@ -343,7 +380,10 @@ new QRCode( 物件 , {
                     <input 
                     data-event="Menu" 
                     data-mode="End" type="button" value="上傳菜單">
-                    <input type="button" data-txt="${location.origin}${location.pathname}?ShopId=${Ex.flag[Ex.cfg.storage].ShopId}" data-event="QrCode" value="顯示QRCODE">
+
+                    <input type="button" data-txt="${location.origin}${location.pathname}?ShopId=${Ex.flag[Ex.cfg.storage].ShopId}" data-event="QrCode" value="店家用QRCODE">
+
+                    <input type="button" data-txt="${location.origin}${location.pathname}?Buy=${Buy}" data-event="QrCode" value="客人用QRCODE">
                 
                 
                 </div>`;
@@ -355,7 +395,7 @@ new QRCode( 物件 , {
                     data-event="Buy" 
                     data-mode="AddFood" type="button" value="點餐">
                     <select id="food">
-                        ${Ex.temp.SelectHtml(Ex.cfg._menu)}
+                        ${Object.values(Ex.flag[Ex.cfg.storage].menu).map(food=>{return `<option value="${food.name}">${food.name},${food.price}</option>`;}).join("")}
                     </select>
                     <div id="Order">
                         ${Ex.temp.Order()}
@@ -369,17 +409,8 @@ new QRCode( 物件 , {
                     </div>
                 `;
             },
-            SelectHtml:(list)=>{
-                var html = ``;
-
-                for(var v in list)
-                {
-                    html += `<option value="${v}">${v},${list[v]}</option>`
-                }
-
-                return html;
-            },
-            Menu:(list = Ex.flag[Ex.cfg.storage].menu)=>{
+            Menu:(list)=>{
+                list = list||Ex.flag[Ex.cfg.storage].menu;
 
                 if(list===undefined) return ``;
                 if(Object.keys(list).length===0) return ``;
@@ -429,7 +460,10 @@ new QRCode( 物件 , {
                 return html;
 
             },
-            Order:(list = Ex.flag[Ex.cfg.storage].order)=>{
+            Order:(list)=>{
+
+                list = list||Ex.flag[Ex.cfg.storage].buy_order;
+
 
                 if(list===undefined) return ``;
                 if(Object.keys(list).length===0) return ``;
@@ -480,19 +514,23 @@ new QRCode( 物件 , {
                 return html;
 
             },
-            OrderList:(list = Ex.flag.OrderList )=>{
+            OrderList:(list)=>{
+
+                list = list||Ex.flag[Ex.cfg.storage].order[Ex.func.IOSDate( new Date(Ex.flag.db_time) ).split(" ")[0]];
 
                 if(list===undefined || list===null) return ``;
                 if(Object.keys(list).length===0) return ``;
+                if(list===1) return ``;
 
                 
-                var total_price = 0;
+                
                 var html = `<table>`;
 
                 for(var id in list)
                 {
                     var order = list[id];
                     var detail = ``;
+                    var total_price = 0;
 
                     for(var name in order.list)
                     {
@@ -507,7 +545,7 @@ new QRCode( 物件 , {
                             <td>${Ex.func.IOSDate(order.time,{Y:false})}</td>
                         </tr>
                         <tr>
-                            <td>${detail}${total_price}</td>
+                            <td>${detail}總價${total_price}</td>
                         </tr>
                         <tr>
                             <td><hr></td>
@@ -559,62 +597,71 @@ new QRCode( 物件 , {
             Ex.DB = Ex.DB.database();
 
 
+            Ex.func.DBTime(()=>{
 
 
-            if(Ex.flag.url.get("buy")===null)
-            {
-                document.body.innerHTML = Ex.temp.ShopPage();
+                if(Ex.flag.url.get("Buy")===null)
+                {
+                    document.body.innerHTML = Ex.temp.ShopPage();
 
-                if(Ex.flag[Ex.cfg.storage].ShopId!==undefined)
-                Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}`).on("value",r=>{
+                    if(Ex.flag[Ex.cfg.storage].ShopId!==undefined)
+                    Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}`).on("value",r=>{
+                        if(r.val()===null)
+                        {
+                            delete Ex.flag[Ex.cfg.storage].ShopId;
+                            Ex.func.StorageUpd();
+                            setTimeout(()=>{location.href = location.pathname;},0);
+                            return;
+                        }
 
-                    console.log(Ex.flag[Ex.cfg.storage].ShopId);
-                    return;
-                    if(r.val()===null)
-                    {
-                        delete Ex.flag[Ex.cfg.storage].ShopId;
+                        var ShopId = Ex.flag[Ex.cfg.storage].ShopId;
+                        Ex.flag[Ex.cfg.storage] = r.val();
+                        Ex.flag[Ex.cfg.storage].ShopId = ShopId;
                         Ex.func.StorageUpd();
-                        setTimeout(()=>{location.href = location.pathname;},0);
-                        return;
-                    }
+        
+                        document.querySelector("#Order").innerHTML = Ex.temp.Menu();
+        
+                    });
 
-                    Ex.flag[Ex.cfg.storage] = r.val();
-                    Ex.flag[Ex.cfg.storage].ShopId = Ex.flag[Ex.cfg.storage].ShopId;
-                    Ex.func.StorageUpd();
-    
-                    document.querySelector("#Order").innerHTML = Ex.temp.Menu();
-    
-                });
-            }
-            else
-            {
-                document.body.innerHTML = Ex.temp.BuyPage();
+                    
+                }
+                else
+                {
+                    var Buy = Ex.flag.url.get("Buy");
 
-                Ex.DB.ref("order").on("value",r=>{
+                    Buy = JSON.parse(atob(Buy));
 
-                    if(r.val()===null) return;
+                    Ex.DB.ref(`shop/${Buy.id}`).on("value",r=>{
 
-                    Ex.flag.OrderList = r.val();
-    
-    
-                    document.querySelector("#OrderList").innerHTML = Ex.temp.OrderList();
-    
-                });
-            }
+                        if(r.val()===null){
+
+                            setTimeout(()=>{location.href = location.pathname;},0);
+                            return;
+                        }
+
+
+                        var buy_order = Ex.flag[Ex.cfg.storage].buy_order;
+                        Ex.flag[Ex.cfg.storage] = r.val();
+                        Ex.flag[Ex.cfg.storage].ShopId = Buy.id;
+                        Ex.flag[Ex.cfg.storage].buy_order = buy_order;
+        
+        
+                        document.body.innerHTML = Ex.temp.BuyPage();
+        
+                        document.querySelector("#OrderList").innerHTML = Ex.temp.OrderList();
+                    });
+
+
+
+                }
+
+            });
 
             
 
             document.addEventListener("click",Ex.func.ClickEvent);
 
 
-            
-            setInterval(()=>{
-
-                navigator.geolocation.getCurrentPosition(function(p) {
-                    document.querySelector("textarea").value = `latitude:${p.coords.latitude}\nlongitude:${p.coords.longitude}`;
-                });
-
-            },1000);
             
 
 
