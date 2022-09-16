@@ -567,7 +567,7 @@ new QRCode( 物件 , {
                     }
 
                     Ex.flag[Ex.cfg.storage].menu = r.val().menu;
-    
+                    Ex.func.StorageUpd();
     
                     document.querySelector("#Order").innerHTML = Ex.temp.Menu();
     
