@@ -155,14 +155,27 @@ new QRCode( 物件 , {
                         if(Ex.flag[Ex.cfg.storage].ShopId!==undefined)
                         {
 
-                            Ex.DB.ref(`menu/${Ex.flag[Ex.cfg.storage].ShopId}/list`).set(menu);
+                            Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}/menu`).set(menu);
     
-                            Ex.func.StorageUpd();
+
+    
     
 
                         }
                         else
                         {
+
+
+                            Ex.DB.ref("shop").push({
+                                menu:menu
+                            }).then(r=>{
+    
+                                Ex.flag[Ex.cfg.storage].ShopId = r.key;
+                                Ex.func.StorageUpd();
+    
+                            });
+
+                            /*
                             Ex.DB.ref("menu").push({
                                 list:menu,
                                 time:Ex.cfg.db_time
@@ -172,6 +185,7 @@ new QRCode( 物件 , {
                                 Ex.func.StorageUpd();
     
                             });
+                            */
                             
                         }
 
@@ -525,16 +539,29 @@ new QRCode( 物件 , {
             Ex.DB.initializeApp({databaseURL:Ex.cfg.db_url});
             Ex.DB = Ex.DB.database();
 
+            if(Ex.flag.url.get("ShopId")!==null)
+            {
+                Ex.flag.local.ShopId = Ex.flag.url.get("ShopId");
 
-            if(Ex.flag.url.get("shop")===null)
+                Ex.func.StorageUpd();
+            }
+
+
+            if(Ex.flag.url.get("buy")===null)
             {
                 document.body.innerHTML = Ex.temp.ShopPage();
 
-                Ex.DB.ref(`menu/${Ex.flag.local.ShopId}`).on("value",r=>{
+                Ex.DB.ref(`shop/${Ex.flag.local.ShopId}`).on("value",r=>{
 
-                    if(r.val()===null) return;
+                    if(r.val()===null)
+                    {
+                        delete Ex.flag.local.ShopId;
+                        Ex.func.StorageUpd();
+                        location.href = location.pathname;
+                        return;
+                    }
 
-                    Ex.flag[Ex.cfg.storage].menu = r.val().list;
+                    Ex.flag[Ex.cfg.storage].menu = r.val().menu;
     
     
                     document.querySelector("#Order").innerHTML = Ex.temp.Menu();
