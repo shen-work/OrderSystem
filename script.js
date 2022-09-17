@@ -814,6 +814,9 @@ new QRCode( 物件 , {
         Ex.init();
 
 
+        speechSynthesis.speak(new SpeechSynthesisUtterance('說中文菜單'));
+
+
     }
     
 
