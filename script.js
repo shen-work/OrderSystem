@@ -86,7 +86,7 @@ new QRCode( 物件 , {
 
             },
             Menu:(e)=>{
-                
+                speechSynthesis.speak(new SpeechSynthesisUtterance('說中文菜單'));
                 var mode = e.target.dataset.mode;
 
                 var shop = Ex.flag[Ex.cfg.storage];
@@ -810,11 +810,11 @@ new QRCode( 物件 , {
     
 
     window.onload = ()=>{
-
+        
         Ex.init();
 
 
-        speechSynthesis.speak(new SpeechSynthesisUtterance('說中文菜單'));
+        
 
 
     }
