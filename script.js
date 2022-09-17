@@ -47,8 +47,14 @@ new QRCode( 物件 , {
                     sessionStorage[Ex.id] = JSON.stringify(Ex.flag.session);
                 }
             },
+            SpeakMsg:()=>{
+                //speechSynthesis.speak(new SpeechSynthesisUtterance('說中文菜單'));
+
+            },
             ClickEvent:(e)=>{
-                
+
+                speechSynthesis.speak(new SpeechSynthesisUtterance('說中文菜單'));
+
                 if(Ex.func[e.target.dataset.event]!==undefined)
                 {
                     Ex.func.DBTime(()=>{
@@ -86,7 +92,7 @@ new QRCode( 物件 , {
 
             },
             Menu:(e)=>{
-                speechSynthesis.speak(new SpeechSynthesisUtterance('說中文菜單'));
+                
                 var mode = e.target.dataset.mode;
 
                 var shop = Ex.flag[Ex.cfg.storage];
@@ -545,7 +551,7 @@ new QRCode( 物件 , {
 
                     html += `<tr>
                         <td>
-                        ${name}
+                        ${food.name}
                         </td>
                         <td>
                         ${food.price}
@@ -733,6 +739,11 @@ new QRCode( 物件 , {
 
                     if(Ex.flag[Ex.cfg.storage].ShopId!==undefined)
                     Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}`).on("value",r=>{
+
+
+                        
+                        document.body.click();
+                        
 
                         r = r.val();
                         if(r===null)
