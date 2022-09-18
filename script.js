@@ -49,7 +49,7 @@ new QRCode( 物件 , {
             },
             SpeakMsg:()=>{
                 
-                speechSynthesis.speak(new SpeechSynthesisUtterance('說中文菜單'));
+                speechSynthesis.speak(new SpeechSynthesisUtterance(Ex.flag.msg||'測試語音'));
 
             },
             ClickEvent:(e)=>{
@@ -414,7 +414,8 @@ new QRCode( 物件 , {
                     <input type="button" data-txt="${location.origin}${location.pathname}?ShopId=${Ex.flag.storage.ShopId}" data-event="QrCode" value="店家用QRCODE">
 
                     <input type="button" data-txt="${location.origin}${location.pathname}?Buy=${Buy}" data-event="QrCode" value="客人用QRCODE">
-                
+
+                    <input type="hidden" data-event="SpeakMsg">
                 
                 </div>`;
             },
@@ -530,6 +531,8 @@ new QRCode( 物件 , {
                     </div>
 
                     </div>
+
+                    <input type="hidden" data-event="SpeakMsg">
                 `;
             },
             ShowOrder:()=>{
@@ -747,7 +750,14 @@ new QRCode( 物件 , {
 
                         document.body.innerHTML = Ex.temp.ShopPage();
 
-        
+
+
+                        var time = Ex.func.IOSDate(Ex.flag.db_time,{
+                            Y:false,M:false,D:false
+                        });
+                        Ex.flag.msg = `${time}有新定單`;
+                        document.querySelector(`[data-event="SpeakMsg"]`).click();
+                        
                     });
 
                     
@@ -784,8 +794,11 @@ new QRCode( 物件 , {
 
                 }
 
+
             });
 
+            
+            
             
 
             document.addEventListener("click",Ex.func.ClickEvent);
@@ -810,10 +823,6 @@ new QRCode( 物件 , {
     window.onload = ()=>{
         
         Ex.init();
-
-
-        
-
 
     }
     
