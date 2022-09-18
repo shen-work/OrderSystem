@@ -48,12 +48,11 @@ new QRCode( 物件 , {
                 }
             },
             SpeakMsg:()=>{
-                //speechSynthesis.speak(new SpeechSynthesisUtterance('說中文菜單'));
+                
+                speechSynthesis.speak(new SpeechSynthesisUtterance('說中文菜單'));
 
             },
             ClickEvent:(e)=>{
-
-                speechSynthesis.speak(new SpeechSynthesisUtterance('說中文菜單'));
 
                 if(Ex.func[e.target.dataset.event]!==undefined)
                 {
@@ -151,18 +150,20 @@ new QRCode( 物件 , {
                         }
                         else
                         {
-                            document.querySelectorAll(`[data-input]`).forEach(o=>{
-                                o.value = shop.menu[ e.target.id ][ o.id ];
-                            });
-    
-                            document.querySelector(`[data-mode="AddFood"]`).value = "修改菜單";
-    
-                            document.querySelector(`[data-mode="AddFood"]`).dataset.edit_id = e.target.id;
-    
-                            document.querySelector(`[data-mode="AddFood"]`).dataset.mode = "SetFood";
-
                             setTimeout(()=>{
+                                
+                                document.querySelectorAll(`[data-input]`).forEach(o=>{
+                                    o.value = (shop.menu[ e.target.id ][ o.id ]!==undefined)?shop.menu[ e.target.id ][ o.id ]:shop[ o.id ]
+                                });
 
+
+                                document.querySelector(`[data-mode="AddFood"]`).value = "修改菜單";
+        
+                                document.querySelector(`[data-mode="AddFood"]`).dataset.edit_id = e.target.id;
+        
+                                document.querySelector(`[data-mode="AddFood"]`).dataset.mode = "SetFood";
+
+                                
                                 document.querySelectorAll(`table [data-event="Menu"]`).forEach(o=>{
                                     o.setAttribute("disabled","disabled");
                                 });
@@ -178,52 +179,7 @@ new QRCode( 物件 , {
                         
                     break;
 
-                    /*
-                    case "End":
-
-                        if(Object.keys(shop.menu).length>0)
-                        {
-                            Ex.flag[Ex.cfg.storage].shop_name = data.shop_name;
-
-                            Ex.func.DBTime(()=>{
-    
-                                var day = Ex.func.IOSDate(Ex.flag.db_time).split(" ")[0];
-                                shop.order[ day ] = shop.order[ day ]||1;
-    
-                                
-    
-                                if(Ex.flag[Ex.cfg.storage].ShopId!==undefined)
-                                {                            
-                                    Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}`).set({
-                                        menu:shop.menu,
-                                        order:shop.order,
-                                        shop_name:data.shop_name
-                                    });
-            
-                                }
-                                else
-                                {
-        
-        
-                                    Ex.DB.ref("shop").push({
-                                        menu:shop.menu,
-                                        order:shop.order,
-                                        shop_name:data.shop_name
-                                    }).then(r=>{
-            
-                                        Ex.flag[Ex.cfg.storage].ShopId = r.key;
-                                        Ex.func.StorageUpd();
-            
-                                    });
-        
-                                }
-    
-                            });
-
-                        }
-
-                    break;
-                    */
+                    
                 }
 
                 if(Object.keys(shop.menu).length>0 && mode!=="ShopMode")
@@ -233,7 +189,7 @@ new QRCode( 物件 , {
                     Ex.func.DBTime(()=>{
 
                         var day = Ex.func.IOSDate(Ex.flag.db_time).split(" ")[0];
-                        shop.order[ day ] = shop.order[ day ]||1;
+                        shop.order[ day ] = shop.order[ day ]||{};
 
                         
 
@@ -248,8 +204,6 @@ new QRCode( 物件 , {
                         }
                         else
                         {
-
-
                             Ex.DB.ref("shop").push({
                                 menu:shop.menu,
                                 order:shop.order,
@@ -285,11 +239,13 @@ new QRCode( 物件 , {
                 
 
 
+                /*
                 if(Ex.flag[Ex.cfg.storage].order[ day ]===undefined)
                 {
                     console.log("no order");
                     return;
                 }
+                */
 
 
                 switch (mode)
@@ -344,7 +300,7 @@ new QRCode( 物件 , {
                         if(Object.keys(buy_order).length>0)
                         {
                             Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}/order/${day}`).push({
-                                id:Object.keys(Ex.flag[Ex.cfg.storage].order[day]).length+1,
+                                id:Object.keys(Ex.flag[Ex.cfg.storage].order[day]||{}).length+1,
                                 list:buy_order,
                                 time:Ex.cfg.db_time
                             }).then(r=>{
@@ -429,7 +385,7 @@ new QRCode( 物件 , {
                 return `<div id="Main">
 
 
-                    ${(Ex.flag[Ex.cfg.storage].ShopMode!=='ShowOrder')?Ex.temp.ShowMenu():Ex.temp.ShowOrder()}
+                    ${(Ex.flag[Ex.cfg.storage].ShopMode!=='ShowOrder')?Ex.temp.ShowMenu():Ex.temp.OrderList()}
                     
 
                     <!--
@@ -479,10 +435,30 @@ new QRCode( 物件 , {
                     </div>
                 `;
             },
+            OrderDetail:(data)=>{
+
+
+                return `
+                <tr>
+                    <td>編號${data.id}</td>
+                </tr>
+                <tr>
+                    <td>${Ex.func.IOSDate(data.time,{Y:false})}</td>
+                </tr>
+                <tr>
+                    <td>${data.detail}總價${data.total_price}</td>
+                </tr>
+                <tr>
+                    <td><hr></td>
+                </tr>`;
+            },
             ShowOrder:()=>{
 
                 var day = Ex.func.IOSDate(new Date(Ex.flag.db_time)).split(" ")[0];
-                var order = Ex.flag[Ex.cfg.storage].order[day][Ex.flag[Ex.cfg.storage].BuyId];
+
+                if(Ex.flag[Ex.cfg.storage].order[day]===undefined) return ``;
+
+                var order = Ex.flag[Ex.cfg.storage].order[day][ Ex.flag[Ex.cfg.storage].BuyId ];
 
 
                 var detail = ``;
@@ -499,18 +475,15 @@ new QRCode( 物件 , {
 
                 return `
                 <table>
-                <tr>
-                    <td>${order.id}</td>
-                </tr>
-                <tr>
-                    <td>${Ex.func.IOSDate(order.time,{Y:false})}</td>
-                </tr>
-                <tr>
-                    <td>${detail}總價${total_price}</td>
-                </tr>
-                <tr>
-                    <td><hr></td>
-                </tr>
+
+                ${Ex.temp.OrderDetail({
+                    id:order.id,
+                    time:order.time,
+                    detail:detail,
+                    total_price:total_price
+                })}
+
+                
                 </table>
                 
                 
@@ -670,9 +643,17 @@ new QRCode( 物件 , {
                         total_price+=food.count*food.price
                     }
 
+                    html += Ex.temp.OrderDetail({
+                        id:list[id].id,
+                        time:order.time,
+                        detail:detail,
+                        total_price:total_price
+                    });
+
+                    /*
                     html += `
                         <tr>
-                            <td>${list[id].id}</td>
+                            <td>編號${list[id].id}</td>
                         </tr>
                         <tr>
                             <td>${Ex.func.IOSDate(order.time,{Y:false})}</td>
@@ -683,6 +664,7 @@ new QRCode( 物件 , {
                         <tr>
                             <td><hr></td>
                         </tr>`;
+                    */
 
                         
 
@@ -740,10 +722,6 @@ new QRCode( 物件 , {
                     if(Ex.flag[Ex.cfg.storage].ShopId!==undefined)
                     Ex.DB.ref(`shop/${Ex.flag[Ex.cfg.storage].ShopId}`).on("value",r=>{
 
-
-                        
-                        document.body.click();
-                        
 
                         r = r.val();
                         if(r===null)
