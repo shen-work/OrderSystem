@@ -6,8 +6,15 @@ body{
     text-align: center;
 }
 
+input[type="button"],select{
+    border-radius: 1cm;
+    
+}
+
+
+
 input[type="button"]:active{
-    background: #555;
+    background: #555555;
     color: #fff;
 }
 
@@ -57,6 +64,11 @@ input[data-input]{
     min-height: 1cm;
     min-width: 1cm;
 }
+.pop select{
+    width: 3cm;
+    height: 1cm;
+    padding-left: 0.3cm;
+}
 
 table{
     width: 100%;
@@ -65,11 +77,26 @@ table{
 
 table td{
     font-size: 0.8cm;
-    
 }
+
 table input{
     height: 1cm;
     min-width: 1cm;
+}
+
+table input[type="button"]{
+    height: 1cm;
+    width: 100%;
+    font-size: 0.5cm;
+}
+
+table div.order_detail{
+    margin-top: -1cm;
+    padding-left: 2.4cm;
+}
+
+table td.order_menu{
+    display: flex;
 }
 
 
