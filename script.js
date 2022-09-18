@@ -571,7 +571,6 @@ new QRCode( 物件 , {
                     <td>餐點</td>
                     <td>單價</td>
                     <td>數量</td>
-                    <td>總價</td>
                     <td></td>
                 </tr>`;
 
@@ -587,7 +586,6 @@ new QRCode( 物件 , {
                         data-event="Buy" 
                         data-mode="CountFood" type="button" value="${food.count}">
                         </td>
-                        <td>${food.count*food.price}</td>
                         <td>
                         <input id="${name}" 
                         data-event="Buy" 
