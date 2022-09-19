@@ -164,6 +164,15 @@ new QRCode( 物件 , {
                         }
 
                     break;
+
+                    case "OrderRest":
+
+                        delete Ex.flag.storage.BuyId;
+                        Ex.func.StorageUpd();
+
+                        document.body.innerHTML = Ex.temp.BuyPage();
+
+                    break;
                 }
 
 
@@ -478,10 +487,10 @@ new QRCode( 物件 , {
 
                 return `<div id="Main">
 
-                    ${(Ex.flag.storage.ShopMode==='ShowOrder')?`<select id="ShowOrderMode" data-mode="OrderStatusSelect"><option value="-1">全部</option>${Object.values(Ex.cfg.order_status).map((v,k)=>{return `<option ${(parseInt(Ex.flag.storage.OrderStatusSelect)===k)?`selected="selected`:``} value="${k}">${v}</option>`;}).join("")}</select>`:``}
+                    
 
 
-                    ${(Ex.flag.storage.ShopMode!=='ShowOrder')?Ex.temp.ShowMenu():Ex.temp.OrderList()}
+                    
                     
 
                     <!--
@@ -494,16 +503,17 @@ new QRCode( 物件 , {
                     data-event="Menu" 
                     data-mode="ShopMode" type="button" value="${(Ex.flag.storage.ShopMode!=='ShowOrder')?`顯示定單`:"顯示菜單"}">
 
-
-                    
-
                     
 
                     <input type="button" data-txt="${location.origin}${location.pathname}?ShopId=${Ex.flag.storage.ShopId}" data-event="QrCode" value="店家用QRCODE">
 
                     <input type="button" data-txt="${location.origin}${location.pathname}?Buy=${Buy}" data-event="QrCode" value="客人用QRCODE">
 
-                    <input type="button" data-event="SpeakMsg" value="開啟語音通知">
+                    <input type="button" data-event="SpeakMsg" value="${(Ex.flag.speak_on)?"關閉語音通知":"開啟語音通知"}">
+
+                    ${(Ex.flag.storage.ShopMode==='ShowOrder')?`<select id="ShowOrderMode" data-mode="OrderStatusSelect"><option value="-1">全部</option>${Object.values(Ex.cfg.order_status).map((v,k)=>{return `<option ${(parseInt(Ex.flag.storage.OrderStatusSelect)===k)?`selected="selected`:``} value="${k}">${v}</option>`;}).join("")}</select>`:``}
+
+                    ${(Ex.flag.storage.ShopMode!=='ShowOrder')?Ex.temp.ShowMenu():Ex.temp.OrderList()}
                 
                 </div>`;
 
@@ -591,7 +601,7 @@ new QRCode( 物件 , {
                 if(list===1) return `1`;
 
                 
-                
+                Ex.flag.storage.OrderStatusSelect = Ex.flag.storage.OrderStatusSelect||0;
                 
                 var html = `<table>`;
 
@@ -615,7 +625,7 @@ new QRCode( 物件 , {
 
                 return `<div id="Main">
 
-                    ${(Ex.flag.storage.BuyId!==undefined)?Ex.temp.ShowOrder():Ex.temp.SelectFood()}
+                    ${(Ex.flag.storage.BuyId!==undefined)?Ex.temp.BuyOrder():Ex.temp.SelectFood()}
                         
 
                     <div id="OrderList">
@@ -626,14 +636,12 @@ new QRCode( 物件 , {
 
 
 
-
-
                 </div>
 
                     
                 `;
             },
-            ShowOrder:()=>{
+            BuyOrder:()=>{
 
                 var day = Ex.func.IOSDate(new Date(Ex.flag.db_time)).split(" ")[0];
 
@@ -783,8 +791,22 @@ new QRCode( 物件 , {
                     <td>${detail}總價：${total_price}</td>
                 </tr>
                 <tr>
-                    <td>狀態：${Ex.cfg.order_status[data.status||0]}<BR><hr></td>
-                </tr>`;
+                    <td>狀態：${Ex.cfg.order_status[data.status||0]}<BR>
+                    
+                    ${(data.status===2 || data.status===3)?`
+                    <input type="button" 
+                        data-mode="OrderRest" 
+                        data-event="OrderStatus" 
+                        data-value="" value="再次點餐">
+                    `:``}
+                    
+                    
+                    <hr></td>
+                </tr>
+                
+                
+                
+                `;
             },
             CountFood:(food)=>{
                 var html = ``;
