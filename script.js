@@ -34,6 +34,31 @@ new QRCode( 物件 , {
             }
         },
         func:{
+            AddEvent:(selector,type,event)=>{
+
+                var element = document.querySelectorAll(selector);
+
+                if(element.length===0)
+                {
+                    setTimeout(()=>{
+                        Ex.func.AddEvent(selector,type,event);
+                    },0);
+                    return;
+                }
+
+                for(var i=0;i<element.length;i++)
+                {
+                    if(element[i]===null || element[i]===undefined)
+                    {
+                        setTimeout(()=>{
+                            Ex.func.AddEvent(selector,type,event);
+                        },0);
+                        break;
+                    }
+                    element[i].addEventListener(type,event);
+                }
+
+            },
             StorageUpd:()=>{
 
                 if(Ex.flag.local===undefined || Ex.flag.session===undefined)
@@ -47,9 +72,23 @@ new QRCode( 物件 , {
                     sessionStorage[Ex.id] = JSON.stringify(Ex.flag.session);
                 }
             },
-            SpeakMsg:()=>{
+            SpeakMsg:(e)=>{
+
+                e = e||{};
+
+                if(e.type==="click")
+                {
+                    Ex.flag.speak_on = !Ex.flag.speak_on;
+                    e.target.value = (Ex.flag.speak_on)?"關閉語音通知":"開啟語音通知";
+
+                    return;
+                }
                 
-                speechSynthesis.speak(new SpeechSynthesisUtterance(Ex.flag.msg||'測試語音'));
+
+                if(Ex.flag.speak_on)
+                {
+                    speechSynthesis.speak(new SpeechSynthesisUtterance(Ex.flag.msg||'測試語音'));
+                }
 
             },
             ClickEvent:(e)=>{
@@ -92,10 +131,43 @@ new QRCode( 物件 , {
             },
             OrderStatus:(e)=>{
 
+                var mode = e.target.dataset.mode;
 
-                var day = Ex.func.IOSDate(new Date(Ex.flag.db_time)).split(" ")[0];
 
-                Ex.DB.ref(`shop/${Ex.flag.storage.ShopId}/order/${day}/${e.target.id}/status`).set( parseInt(e.target.dataset.value) );
+
+                switch (mode)
+                {
+                    case "OrderStatusSelect":
+
+                        Ex.flag.storage.OrderStatusSelect = parseInt(e.target.value);
+                        Ex.func.StorageUpd();
+
+                        document.body.innerHTML = Ex.temp.ShopPage();
+                        
+
+                    break;
+
+
+                    case "OrderStatusSet":
+                        var day = Ex.func.IOSDate(new Date(Ex.flag.db_time)).split(" ")[0];
+
+                        var status = parseInt(e.target.dataset.value);
+        
+                        Ex.DB.ref(`shop/${Ex.flag.storage.ShopId}/order/${day}/${e.target.dataset.db_id}/status`).set( status );
+        
+        
+                        if(status===1)
+                        {
+                            Ex.flag.msg = `編號${e.target.dataset.order_id}的餐點可以取餐了`;
+        
+                            Ex.func.SpeakMsg();
+                        }
+
+                    break;
+                }
+
+
+                
 
                
 
@@ -189,6 +261,11 @@ new QRCode( 物件 , {
                         
                     break;
 
+                    case "ShowOrderMode":
+
+
+                    break;
+
                     
                 }
 
@@ -237,8 +314,6 @@ new QRCode( 物件 , {
                 Ex.func.StorageUpd();
 
                 document.body.innerHTML = Ex.temp.ShopPage();
-
-
             },
             Buy:(e)=>{
 
@@ -395,7 +470,15 @@ new QRCode( 物件 , {
                     day:Ex.func.IOSDate(new Date(Ex.flag.db_time)).split(" ")[0]
                 }));
 
+
+                setTimeout(()=>{
+                    Ex.func.AddEvent("#ShowOrderMode","change",Ex.func.OrderStatus);
+                },100);
+                
+
                 return `<div id="Main">
+
+                    ${(Ex.flag.storage.ShopMode==='ShowOrder')?`<select id="ShowOrderMode" data-mode="OrderStatusSelect"><option value="-1">全部</option>${Object.values(Ex.cfg.order_status).map((v,k)=>{return `<option ${(parseInt(Ex.flag.storage.OrderStatusSelect)===k)?`selected="selected`:``} value="${k}">${v}</option>`;}).join("")}</select>`:``}
 
 
                     ${(Ex.flag.storage.ShopMode!=='ShowOrder')?Ex.temp.ShowMenu():Ex.temp.OrderList()}
@@ -411,13 +494,20 @@ new QRCode( 物件 , {
                     data-event="Menu" 
                     data-mode="ShopMode" type="button" value="${(Ex.flag.storage.ShopMode!=='ShowOrder')?`顯示定單`:"顯示菜單"}">
 
+
+                    
+
+                    
+
                     <input type="button" data-txt="${location.origin}${location.pathname}?ShopId=${Ex.flag.storage.ShopId}" data-event="QrCode" value="店家用QRCODE">
 
                     <input type="button" data-txt="${location.origin}${location.pathname}?Buy=${Buy}" data-event="QrCode" value="客人用QRCODE">
 
-                    <input type="hidden" data-event="SpeakMsg">
+                    <input type="button" data-event="SpeakMsg" value="開啟語音通知">
                 
                 </div>`;
+
+
             },
             ShowMenu:()=>{
 
@@ -502,11 +592,15 @@ new QRCode( 物件 , {
 
                 
                 
+                
                 var html = `<table>`;
 
                 for(var id in list)
                 {
+                    if(Ex.flag.storage.OrderStatusSelect!==list[id].status && Ex.flag.storage.OrderStatusSelect!==-1) continue;
 
+                    //if(list[id].status===2 || list[id].status===3) continue;
+                    
                     html += Ex.temp.OrderDetail(list[id],id);
 
                 }
@@ -530,9 +624,13 @@ new QRCode( 物件 , {
 
                     </div>
 
-                    </div>
 
-                    <input type="hidden" data-event="SpeakMsg">
+
+
+
+                </div>
+
+                    
                 `;
             },
             ShowOrder:()=>{
@@ -662,8 +760,11 @@ new QRCode( 物件 , {
                 <tr>
                     <td class="order_menu">
 
-                    ${Object.values(Ex.cfg.order_status).map((v,k)=>{return `<input type="button" id="${db_id}" 
+                    ${Object.values(Ex.cfg.order_status).map((v,k)=>{return `<input type="button" 
+                    data-mode="OrderStatusSet" 
                     data-event="OrderStatus" 
+                    data-db_id="${db_id}" 
+                    data-order_id="${data.id}" 
                     data-value="${k}" value="${v}">`;}).join("")}
 
 
@@ -728,11 +829,8 @@ new QRCode( 物件 , {
 
                 if(Ex.flag.url.get("Buy")===null || Ex.flag.storage.user==="shop")
                 {
-                    
-
                     if(Ex.flag.storage.ShopId!==undefined)
                     Ex.DB.ref(`shop/${Ex.flag.storage.ShopId}`).on("value",r=>{
-
 
                         r = r.val();
                         if(r===null)
@@ -743,20 +841,39 @@ new QRCode( 物件 , {
                             return;
                         }
 
+
+                        var day = Ex.func.IOSDate(new Date(Ex.flag.db_time)).split(" ")[0];
+                        var online_order = Object.values(r.order[day]);
+                        var local_order = Object.values(Ex.flag.storage.order[day]);
+
+
+                        if( online_order.length>local_order.length)
+                        {
+                            var time = Ex.func.IOSDate(Ex.flag.db_time,{
+                                Y:false,M:false,D:false
+                            });
+                            Ex.flag.msg = `${time}有新定單,`;
+                            
+                            var new_order = online_order.pop();
+
+                            for(var food in new_order.list)
+                            {
+                                Ex.flag.msg+= `${food}${new_order.list[food].count}份,`;
+                            }
+
+                            Ex.func.SpeakMsg();
+                        }
+
+                        
+                        
+
                         for(var key in r) Ex.flag.storage[key] = r[key];
                         Ex.flag.storage.user = "shop";
                         Ex.func.StorageUpd();
 
 
                         document.body.innerHTML = Ex.temp.ShopPage();
-
-
-
-                        var time = Ex.func.IOSDate(Ex.flag.db_time,{
-                            Y:false,M:false,D:false
-                        });
-                        Ex.flag.msg = `${time}有新定單`;
-                        document.querySelector(`[data-event="SpeakMsg"]`).click();
+                        
                         
                     });
 
