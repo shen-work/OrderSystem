@@ -136,6 +136,26 @@ new QRCode( 物件 , {
                 });
 
             },
+            System:(e)=>{
+
+                var mode = e.target.dataset.mode;
+
+                switch (mode)
+                {
+                    case "Clear":
+
+                        Ex.flag[Ex.cfg.storage] = {};
+
+                        Ex.func.StorageUpd();
+
+                        location.reload();
+
+                    break;
+
+                }
+
+
+            },
             ShopRegister:(e)=>{
 
                 var mode = e.target.dataset.mode;
@@ -556,6 +576,8 @@ new QRCode( 物件 , {
 
                 return `<div id="Main">
 
+                    
+
                     <input data-input id="shop_name" placeholder="店名" type="text" value="">
 
                     <input 
@@ -581,13 +603,10 @@ new QRCode( 物件 , {
 
                 return `<div id="Main">
 
-                    
-
-                    <!--
                     <input 
-                    data-event="Menu" 
-                    data-mode="End" type="button" value="上傳菜單">
-                    -->
+                    data-event="System" 
+                    data-mode="Clear" type="button" value="清除資料">
+                 
 
                     <input 
                     data-event="Menu" 
@@ -678,7 +697,7 @@ new QRCode( 物件 , {
                 var list = Ex.flag.storage.order[Ex.flag.day]||{};
 
                 if(list===undefined || list===null) return `undefined`;
-                if(Object.keys(list).length===0) return `0`;
+                if(Object.keys(list).length===0) return ``;
                 if(list===1) return `1`;
 
 
@@ -707,6 +726,7 @@ new QRCode( 物件 , {
                 Ex.flag.storage.OrderStatusSelect = 0;
 
                 return `<div id="Main">
+
 
                     ${(Ex.flag.storage.BuyId!==undefined)?Ex.temp.BuyOrder():Ex.temp.SelectFood()}
                         
@@ -759,19 +779,22 @@ new QRCode( 物件 , {
             },
             SelectFood:()=>{
 
+                var disabled = (Ex.flag.storage.menu===undefined)?`disabled="disabled"`:``;
+
+
                 return `
                     <input 
                     data-event="Buy" 
-                    data-mode="AddFood" type="button" value="點餐">
+                    data-mode="AddFood" ${disabled} type="button" value="點餐">
                     <select id="food">
-                        ${Object.values(Ex.flag.storage.menu).map(food=>{return `<option value="${food.name}">${food.name},${food.price}</option>`;}).join("")}
+                        ${Object.values(Ex.flag.storage.menu||{}).map(food=>{return `<option value="${food.name}">${food.name},${food.price}</option>`;}).join("")}
                     </select>
                     <div id="Order">
                         ${Ex.temp.Order()}
                     </div>
                     <input 
                     data-event="Buy" 
-                    data-mode="End" type="button" value="結帳">
+                    data-mode="End" ${disabled} type="button" value="結帳">
                 `;
             },
             Order:(list)=>{
