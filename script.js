@@ -242,7 +242,10 @@ new QRCode( 物件 , {
 
                     case "Verify":
 
+                    
+
                         var code = document.querySelector("#VerifyCode");
+
 
                         if(code!==null)
                         {
@@ -268,13 +271,15 @@ new QRCode( 物件 , {
 
                         `,`Verify`,e);
 
+                    return;
                     
 
-                    break;
                 }
 
-                document.body.innerHTML = Ex.temp.ShopPage();
-
+                if(Ex.flag.storage.user==="shop")
+                    document.body.innerHTML = Ex.temp.ShopPage();
+                else
+                    document.body.innerHTML = Ex.temp.BuyPage();
             },
             Menu:(e)=>{
                 
@@ -705,13 +710,14 @@ new QRCode( 物件 , {
                 Ex.flag.storage.OrderStatusSelect = (Ex.flag.storage.OrderStatusSelect===undefined)?-1:Ex.flag.storage.OrderStatusSelect;
 
 
+
+
+
                 for(var db_id in list) list[db_id].db_id = db_id;
 
                 list = Object.values(list);
                 list.sort( (a,b)=>{
-
-                    return b.id - a.id  ;
-
+                    return b.id - a.id;
                 });
                 
                 
@@ -1021,6 +1027,8 @@ new QRCode( 物件 , {
                             
                             
                             var new_order = online_order.pop()||{};
+
+                            
     
                             if(new_order.status===0)
                             {
@@ -1064,7 +1072,6 @@ new QRCode( 物件 , {
                             return;
                         }
 
-                        
 
 
                         for(var key in r) Ex.flag.storage[key] = r[key];
