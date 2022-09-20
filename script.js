@@ -23,8 +23,8 @@ new QRCode( 物件 , {
             storage:"local",
             order_status:{
                 0:"準備中",
-                1:"等待取餐",
-                2:"取餐完成",
+                1:"可取餐",
+                2:"已取餐",
                 3:"取消",
                 4:"驗證中"
             }
@@ -701,17 +701,29 @@ new QRCode( 物件 , {
                 if(list===1) return `1`;
 
 
+
                 Ex.flag.storage.OrderStatusSelect = (Ex.flag.storage.OrderStatusSelect===undefined)?-1:Ex.flag.storage.OrderStatusSelect;
+
+
+                for(var db_id in list) list[db_id].db_id = db_id;
+
+                list = Object.values(list);
+                list.sort( (a,b)=>{
+
+                    return b.id - a.id  ;
+
+                });
                 
                 
                 var html = `<table>`;
 
-                for(var id in list)
+                for(var i=0;i<list.length;i++)
                 {
-                    if(Ex.flag.storage.OrderStatusSelect!==list[id].status && Ex.flag.storage.OrderStatusSelect!==-1) continue;
+
+                    if(Ex.flag.storage.OrderStatusSelect!==list[i].status && Ex.flag.storage.OrderStatusSelect!==-1) continue;
 
                     
-                    html += Ex.temp.OrderDetail(list[id],{db_id:id});
+                    html += Ex.temp.OrderDetail(list[i],{db_id:list[i].db_id});
 
                 }
 
