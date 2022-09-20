@@ -9,8 +9,11 @@ new QRCode( 物件 , {
     width: 寬,
     height: 高
 });
-
 */
+
+//餐點數量調整UI
+
+
 //(()=>{
     var Ex = {
         id:"OrderSystem",
@@ -22,7 +25,8 @@ new QRCode( 物件 , {
                 0:"準備中",
                 1:"等待取餐",
                 2:"取餐完成",
-                3:"取消"
+                3:"取消",
+                4:"驗證中"
             }
         },
         flag:{
@@ -123,16 +127,54 @@ new QRCode( 物件 , {
 
                         Ex.flag.db_time = r.val();
 
+                        Ex.flag.day = Ex.func.IOSDate(new Date(Ex.flag.db_time)).split(" ")[0];
+
+
                         if( typeof(func)==="function" ) func();
                     });
 
                 });
 
             },
-            OrderStatus:(e)=>{
+            ShopRegister:(e)=>{
 
                 var mode = e.target.dataset.mode;
 
+                var data = {};
+
+                document.querySelectorAll(`[data-input]`).forEach(o=>{
+
+                    data[ o.id ] = ( isNaN(parseInt(o.value)) )?o.value:parseInt(o.value);
+                    o.value = '';
+                    
+                });
+
+                switch (mode)
+                {
+                    case "Register":
+
+                        Ex.DB.ref("shop").push({
+
+                            shop_name:data.shop_name
+
+                        }).then(r=>{
+
+                            Ex.flag.storage.ShopId = r.key;
+                            Ex.func.StorageUpd();
+
+                            location.reload();
+
+                        });
+
+                    break;
+
+                }
+
+
+            },
+            OrderStatus:(e)=>{
+
+                var mode = e.target.dataset.mode;
 
 
                 switch (mode)
@@ -141,27 +183,33 @@ new QRCode( 物件 , {
 
                         Ex.flag.storage.OrderStatusSelect = parseInt(e.target.value);
                         Ex.func.StorageUpd();
-
-                        document.body.innerHTML = Ex.temp.ShopPage();
                         
 
                     break;
 
 
                     case "OrderStatusSet":
-                        var day = Ex.func.IOSDate(new Date(Ex.flag.db_time)).split(" ")[0];
 
-                        var status = parseInt(e.target.dataset.value);
+                        var upd = {
+                            status:parseInt(e.target.dataset.value),
+                        };
         
-                        Ex.DB.ref(`shop/${Ex.flag.storage.ShopId}/order/${day}/${e.target.dataset.db_id}/status`).set( status );
+                        /*
+                        Ex.DB.ref(`shop/${Ex.flag.storage.ShopId}/order/${Ex.flag.day}/${e.target.dataset.db_id}/status`).set( status );
+                        */
+
+                        if(upd.status===0) upd.time = Ex.flag.db_time;
+                       
         
-        
-                        if(status===1)
+                        if(upd.status===1)
                         {
+                            
                             Ex.flag.msg = `編號${e.target.dataset.order_id}的餐點可以取餐了`;
         
                             Ex.func.SpeakMsg();
                         }
+
+                        Ex.DB.ref(`shop/${Ex.flag.storage.ShopId}/order/${Ex.flag.day}/${e.target.dataset.db_id}`).update(upd);
 
                     break;
 
@@ -170,15 +218,42 @@ new QRCode( 物件 , {
                         delete Ex.flag.storage.BuyId;
                         Ex.func.StorageUpd();
 
-                        document.body.innerHTML = Ex.temp.BuyPage();
+                    break;
+
+                    case "Verify":
+
+                        var code = document.querySelector("#VerifyCode");
+
+                        if(code!==null)
+                        {
+                            if( parseInt(Ex.flag.storage.order[Ex.flag.day][Ex.flag.storage.BuyId].verify) === parseInt(code.value) )
+                            {
+
+                                Ex.DB.ref(`shop/${Ex.flag.storage.ShopId}/order/${Ex.flag.day}/${Ex.flag.storage.BuyId}`).update( {
+                                    time:Ex.flag.db_time,
+                                    status:0
+                                } );
+                            }
+                            
+                            return;
+                        }
+
+                        
+                        Ex.func.PopWindow(`
+
+                        <input type="number" id="VerifyCode" placeholder="驗證碼">
+                        <input type="button" 
+                        data-event="OrderStatus" 
+                        data-mode="Verify" value=" 驗 證 ">
+
+                        `,`Verify`,e);
+
+                    
 
                     break;
                 }
 
-
-                
-
-               
+                document.body.innerHTML = Ex.temp.ShopPage();
 
             },
             Menu:(e)=>{
@@ -284,8 +359,7 @@ new QRCode( 物件 , {
 
                     Ex.func.DBTime(()=>{
 
-                        var day = Ex.func.IOSDate(Ex.flag.db_time).split(" ")[0];
-                        shop.order[ day ] = shop.order[ day ]||{};
+                        shop.order[ Ex.flag.day ] = shop.order[ Ex.flag.day ]||{};
 
                         
 
@@ -327,7 +401,6 @@ new QRCode( 物件 , {
             Buy:(e)=>{
 
                 var mode = e.target.dataset.mode;
-                var day = Ex.func.IOSDate( new Date(Ex.flag.db_time) ).split(" ")[0];
 
                 var buy_order = Ex.flag.storage.buy_order||{};
                 
@@ -384,7 +457,8 @@ new QRCode( 物件 , {
                                 Ex.temp.CountFood(e.target.id),
                                 'CountFood',
                                 e);
-                          
+
+                            return;
                         }
 
 
@@ -393,31 +467,36 @@ new QRCode( 物件 , {
                     case "End":
                         if(Object.keys(buy_order).length>0)
                         {
-                            Ex.DB.ref(`shop/${Ex.flag.storage.ShopId}/order/${day}`).push({
-                                id:Object.keys(Ex.flag.storage.order[day]||{}).length+1,
+                            Ex.DB.ref(`shop/${Ex.flag.storage.ShopId}/order/${Ex.flag.day}`).push({
+                                id:Object.keys(Ex.flag.storage.order[Ex.flag.day]||{}).length+1,
                                 list:buy_order,
-                                time:Ex.cfg.db_time
+                                verify:(new Date().getTime()).toString().substr(-4),
+                                //time:Ex.cfg.db_time,
+                                status:4
                             }).then(r=>{
     
                                 
                                 Ex.flag.storage.BuyId = r.key;
                                 Ex.func.StorageUpd();
-    
-    
+
                                 document.body.innerHTML = Ex.temp.BuyPage();
+    
                                 
                             });
     
                             buy_order = {};
+
                         }
                     break;
                 }
 
 
                 Ex.flag.storage.buy_order = buy_order;
+                
                 Ex.func.StorageUpd();
 
-                document.querySelector("#Order").innerHTML = Ex.temp.Order();
+                document.body.innerHTML = Ex.temp.BuyPage();
+
 
             },
             Close:(e)=>{
@@ -448,6 +527,8 @@ new QRCode( 物件 , {
             },
             IOSDate:(IOSDate,opt = {})=>{
 
+                if(IOSDate===undefined) return opt.msg||``;
+
                 opt.Y = (opt.Y!==undefined)?opt.Y:true;
                 opt.M = (opt.M!==undefined)?opt.M:true;
                 opt.D = (opt.D!==undefined)?opt.D:true;
@@ -471,6 +552,19 @@ new QRCode( 物件 , {
 
         },
         temp:{
+            ShopRegister:()=>{
+
+                return `<div id="Main">
+
+                    <input data-input id="shop_name" placeholder="店名" type="text" value="">
+
+                    <input 
+                    data-event="ShopRegister" 
+                    data-mode="Register" type="button" value="新增店家">
+                
+                </div>`;
+
+            },
             ShopPage:()=>{
 
                 
@@ -487,10 +581,6 @@ new QRCode( 物件 , {
 
                 return `<div id="Main">
 
-                    
-
-
-                    
                     
 
                     <!--
@@ -528,6 +618,8 @@ new QRCode( 物件 , {
 
                     <input data-input placeholder="名稱" id="name" type="text" value="">
                     <input data-input placeholder="價錢" id="price" type="number" value="">
+
+                    <input data-input id="shop_name" placeholder="店名" type="text" value="${Ex.flag.storage.shop_name||``}">
                 
                 
                     <div id="Order">
@@ -573,35 +665,25 @@ new QRCode( 物件 , {
                 }
 
 
-                html += `
-                
-                <tr>
-                    <td colspan="3">
-                    <input data-input id="shop_name" placeholder="店名" type="text" value="${Ex.flag.storage.shop_name||``}">
-                    </td>
-                    
-                    
-                </tr>
-                
-                </table>`;
+                html += `</table>`;
 
                 return html;
 
             },
-            OrderList:(list)=>{
+            OrderList:()=>{
+
 
                 Ex.flag.storage.order = Ex.flag.storage.order||{};
 
-                if( Ex.flag.storage.order[Ex.func.IOSDate( new Date(Ex.flag.db_time)).split(" ")[0]]===undefined ) return ``;
-
-                list = list||Ex.flag.storage.order[Ex.func.IOSDate( new Date(Ex.flag.db_time) ).split(" ")[0]];
+                var list = Ex.flag.storage.order[Ex.flag.day]||{};
 
                 if(list===undefined || list===null) return `undefined`;
                 if(Object.keys(list).length===0) return `0`;
                 if(list===1) return `1`;
 
+
+                Ex.flag.storage.OrderStatusSelect = (Ex.flag.storage.OrderStatusSelect===undefined)?-1:Ex.flag.storage.OrderStatusSelect;
                 
-                Ex.flag.storage.OrderStatusSelect = Ex.flag.storage.OrderStatusSelect||0;
                 
                 var html = `<table>`;
 
@@ -609,9 +691,8 @@ new QRCode( 物件 , {
                 {
                     if(Ex.flag.storage.OrderStatusSelect!==list[id].status && Ex.flag.storage.OrderStatusSelect!==-1) continue;
 
-                    //if(list[id].status===2 || list[id].status===3) continue;
                     
-                    html += Ex.temp.OrderDetail(list[id],id);
+                    html += Ex.temp.OrderDetail(list[id],{db_id:id});
 
                 }
 
@@ -622,6 +703,8 @@ new QRCode( 物件 , {
 
             },
             BuyPage:()=>{
+
+                Ex.flag.storage.OrderStatusSelect = 0;
 
                 return `<div id="Main">
 
@@ -643,9 +726,8 @@ new QRCode( 物件 , {
             },
             BuyOrder:()=>{
 
-                var day = Ex.func.IOSDate(new Date(Ex.flag.db_time)).split(" ")[0];
 
-                if(Ex.flag.storage.order[day]===undefined)
+                if(Ex.flag.storage.order[Ex.flag.day]===undefined)
                 {
                     delete Ex.flag.storage.BuyId;
                     Ex.func.StorageUpd();
@@ -653,7 +735,7 @@ new QRCode( 物件 , {
                     return;
                 }
 
-                var order = Ex.flag.storage.order[day][ Ex.flag.storage.BuyId ];
+                var order = Ex.flag.storage.order[Ex.flag.day][ Ex.flag.storage.BuyId ];
 
                 if(order===undefined)
                 {
@@ -666,7 +748,7 @@ new QRCode( 物件 , {
                 return `
                 <table>
 
-                ${Ex.temp.OrderDetail(order,Ex.flag.storage.BuyId)}
+                ${Ex.temp.OrderDetail(order,{db_id:Ex.flag.storage.BuyId})}
 
                 
                 
@@ -744,7 +826,7 @@ new QRCode( 物件 , {
                 return html;
 
             },
-            OrderDetail:(data,db_id)=>{
+            OrderDetail:(data,opt)=>{
 
 
                 var detail = `餐點：<BR><div class="order_detail">`;
@@ -759,6 +841,25 @@ new QRCode( 物件 , {
                 }
                 detail += `</div>`
 
+
+
+                var verify_menu = ``;
+
+                if(Ex.flag.storage.user==="shop")
+                {
+                    verify_menu = `<input type="button" value="驗證碼：${data.verify}">`;
+
+                }
+                else{
+
+                    if(Ex.flag.storage.BuyId===opt.db_id && data.status===4){
+
+                        verify_menu = `<input type="button" 
+                        data-event="OrderStatus" 
+                        data-mode="Verify" value="輸入驗證碼">`;
+                    }
+                }
+
                 
 
 
@@ -771,7 +872,7 @@ new QRCode( 物件 , {
                     ${Object.values(Ex.cfg.order_status).map((v,k)=>{return `<input type="button" 
                     data-mode="OrderStatusSet" 
                     data-event="OrderStatus" 
-                    data-db_id="${db_id}" 
+                    data-db_id="${opt.db_id}" 
                     data-order_id="${data.id}" 
                     data-value="${k}" value="${v}">`;}).join("")}
 
@@ -785,19 +886,20 @@ new QRCode( 物件 , {
                     <td>編號：${data.id}</td>
                 </tr>
                 <tr>
-                    <td>時間：${Ex.func.IOSDate(data.time,{Y:false})}</td>
+                    <td>時間：${Ex.func.IOSDate(data.time,{Y:false,msg:'驗證中'})}</td>
                 </tr>
                 <tr>
                     <td>${detail}總價：${total_price}</td>
                 </tr>
                 <tr>
                     <td>狀態：${Ex.cfg.order_status[data.status||0]}<BR>
+
+                    ${verify_menu}
                     
-                    ${(data.status===2 || data.status===3)?`
+                    ${((data.status===2 || data.status===3) && Ex.flag.storage.user==="buy")?`
                     <input type="button" 
                         data-mode="OrderRest" 
-                        data-event="OrderStatus" 
-                        data-value="" value="再次點餐">
+                        data-event="OrderStatus" value="再次點餐">
                     `:``}
                     
                     
@@ -849,57 +951,68 @@ new QRCode( 物件 , {
             Ex.func.DBTime(()=>{
 
 
-                if(Ex.flag.url.get("Buy")===null || Ex.flag.storage.user==="shop")
+                if(Ex.flag.url.get("Buy")===null )
                 {
-                    if(Ex.flag.storage.ShopId!==undefined)
-                    Ex.DB.ref(`shop/${Ex.flag.storage.ShopId}`).on("value",r=>{
+                    if(Ex.flag.storage.ShopId===undefined)
+                    {
+                        document.body.innerHTML = Ex.temp.ShopRegister();
 
-                        r = r.val();
-                        if(r===null)
-                        {
-                            delete Ex.flag.storage.ShopId;
-                            Ex.func.StorageUpd();
-                            setTimeout(()=>{location.href = location.pathname;},0);
-                            return;
-                        }
+                    }
+                    else
+                    {
+                        Ex.DB.ref(`shop/${Ex.flag.storage.ShopId}`).on("value",r=>{
 
+                            r = r.val()||{};
+                            r.order = r.order||{};
+                            r.memu = r.memu||{};
 
-                        var day = Ex.func.IOSDate(new Date(Ex.flag.db_time)).split(" ")[0];
-                        var online_order = Object.values(r.order[day]);
-                        var local_order = Object.values(Ex.flag.storage.order[day]);
+                            /*
+                            if(r===null)
+                            {
+                                delete Ex.flag.storage.ShopId;
+                                Ex.func.StorageUpd();
+                                setTimeout(()=>{location.href = location.pathname;},0);
+                                return;
+                            }
+                            */
 
-
-                        if( online_order.length>local_order.length)
-                        {
+    
+                            var online_order = Object.values(r.order[Ex.flag.day]||{});
+                            
+                            
                             var time = Ex.func.IOSDate(Ex.flag.db_time,{
                                 Y:false,M:false,D:false
                             });
-                            Ex.flag.msg = `${time}有新定單,`;
                             
-                            var new_order = online_order.pop();
-
-                            for(var food in new_order.list)
+                            
+                            var new_order = online_order.pop()||{};
+    
+                            if(new_order.status===0)
                             {
-                                Ex.flag.msg+= `${food}${new_order.list[food].count}份,`;
+                                Ex.flag.msg = `${time}有新定單,`;
+    
+                                for(var food in new_order.list)
+                                {
+                                    Ex.flag.msg+= `${food}${new_order.list[food].count}份,`;
+                                }
+    
+                                Ex.func.SpeakMsg();
                             }
+                            
+    
+    
+                            for(var key in r) Ex.flag.storage[key] = r[key];
+                            Ex.flag.storage.user = "shop";
+                            Ex.func.StorageUpd();
+    
+    
+                            document.body.innerHTML = Ex.temp.ShopPage();
+                            
+                            
+                        });
 
-                            Ex.func.SpeakMsg();
-                        }
+                    }
 
-                        
-                        
-
-                        for(var key in r) Ex.flag.storage[key] = r[key];
-                        Ex.flag.storage.user = "shop";
-                        Ex.func.StorageUpd();
-
-
-                        document.body.innerHTML = Ex.temp.ShopPage();
-                        
-                        
-                    });
-
-                    
                 }
                 else
                 {
